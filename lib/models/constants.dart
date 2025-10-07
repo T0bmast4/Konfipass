@@ -1,0 +1,1 @@
+const String serverUrl = "http://localhost:7777";
