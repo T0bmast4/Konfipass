@@ -55,4 +55,24 @@ class User {
     'profileImgPath': profileImgPath,
     'uuid': uuid,
   };
+
+  User copyWith({
+    int? id,
+    String? uuid,
+    String? firstName,
+    String? lastName,
+    String? username,
+    String? profileImgPath,
+    UserRole? role,
+  }) {
+    return User(
+      id: id ?? this.id,
+      uuid: uuid ?? this.uuid,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
+      username: username ?? this.username,
+      profileImgPath: profileImgPath ?? this.profileImgPath,
+      role: role ?? this.role,
+    );
+  }
 }

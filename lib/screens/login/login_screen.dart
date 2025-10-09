@@ -61,13 +61,21 @@ class _LoginScreenState extends State<LoginScreen> {
                 width: double.infinity,
                 child: FilledButton(
                   onPressed: () async {
-                    final success = await auth.login();
-                    if (!success) {
+                    setState(() {
+                      errorMessage = null;
+                    });
+
+                    final error = await auth.login();
+
+                    if (error != null) {
                       setState(() {
-                        errorMessage = "Login fehlgeschlagen";
+                        errorMessage = error;
                       });
-                    }else{
-                      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomeScreen()));
+                    } else {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (context) => HomeScreen()),
+                      );
                     }
                   },
                   child: const Text("Login"),

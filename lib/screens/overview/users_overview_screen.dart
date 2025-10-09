@@ -1,9 +1,11 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:konfipass/designables/reset_password_dialog.dart';
+import 'package:konfipass/designables/user_profile_img.dart';
+import 'package:konfipass/models/konfipass_pdf.dart';
 import 'package:konfipass/models/user.dart';
 import 'package:konfipass/screens/create/create_user_screen.dart';
+import 'package:konfipass/screens/overview/my_overview_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:konfipass/services/user_service.dart';
@@ -17,17 +19,24 @@ class UserOverviewScreen extends StatefulWidget {
 
 class _UserOverviewPageState extends State<UserOverviewScreen> {
   late UserService userService;
+
   List<User> users = [];
+
   List<User> filteredUsers = [];
+
   bool isLoading = false;
+  bool _isLoadingMore = false;
   bool hasMore = true;
+
+  int _page = 0;
+  final int _limit = 20;
 
   String _query = '';
   String selectedCategory = "Alle";
-  int _page = 0;
-  final int _limit = 20;
-  bool _hasMore = true;
+
   final ScrollController _scrollController = ScrollController();
+
+  Timer? _debounce;
 
   @override
   void initState() {
@@ -38,45 +47,51 @@ class _UserOverviewPageState extends State<UserOverviewScreen> {
     _scrollController.addListener(() {
       if (_scrollController.position.pixels >=
           _scrollController.position.maxScrollExtent - 200) {
-        if (!_isLoadingMore && _hasMore) {
+        if (!_isLoadingMore && hasMore) {
           _fetchUsers();
         }
       }
     });
   }
 
-  bool _isLoadingMore = false;
-
   Future<void> _fetchUsers({bool reset = false}) async {
-    if (isLoading) return;
-    setState(() {
-      isLoading = true;
-      if (reset) {
+    if (isLoading || _isLoadingMore) return;
+
+    if (reset) {
+      setState(() {
+        isLoading = true;
         users.clear();
         _page = 1;
         hasMore = true;
-      }
-    });
+      });
+    } else {
+      setState(() {
+        _isLoadingMore = true;
+      });
+    }
+
     try {
       final fetched = await userService.getUsers(
         page: _page,
         limit: _limit,
         search: _query,
       );
+
       setState(() {
         users.addAll(fetched);
-        isLoading = false;
         _page++;
         if (fetched.length < _limit) hasMore = false;
+        _applyFilter();
       });
-      _applyFilter();
     } catch (e) {
-      setState(() => isLoading = false);
       debugPrint("Fehler beim Laden: $e");
+    } finally {
+      setState(() {
+        isLoading = false;
+        _isLoadingMore = false;
+      });
     }
   }
-
-  Timer? _debounce;
 
   void _onSearchChanged(String query) {
     _debounce?.cancel();
@@ -102,8 +117,8 @@ class _UserOverviewPageState extends State<UserOverviewScreen> {
         final last = user.lastName.toLowerCase();
         final username = user.username.toLowerCase();
         return searchTerms.every(
-          (term) =>
-              first.contains(term) ||
+              (term) =>
+          first.contains(term) ||
               last.contains(term) ||
               username.contains(term),
         );
@@ -116,6 +131,7 @@ class _UserOverviewPageState extends State<UserOverviewScreen> {
   }
 
   void showQrCode(User user) {
+    KonfipassPdf konfipassPdf = new KonfipassPdf(firstName: user.firstName, lastName: user.lastName, username: user.username, password: "!! nicht verfügbar !!", uuid: user.uuid);
     Future.delayed(Duration.zero, () {
       showDialog(
         context: context,
@@ -129,6 +145,13 @@ class _UserOverviewPageState extends State<UserOverviewScreen> {
             ),
           ),
           actions: [
+            ElevatedButton.icon(
+              onPressed: () => konfipassPdf.downloadPdfWeb(
+                Navigator.of(context, rootNavigator: true).context,
+              ),
+              icon: const Icon(Icons.picture_as_pdf),
+              label: const Text('Als PDF herunterladen'),
+            ),
             TextButton(
               onPressed: () => Navigator.pop(ctx),
               child: const Text("Schließen"),
@@ -220,26 +243,19 @@ class _UserOverviewPageState extends State<UserOverviewScreen> {
             padding: const EdgeInsets.all(12),
             child: SearchBar(
               hintText: "Suchen...",
-              onChanged: (value) {
-                _onSearchChanged(value);
-              },
+              onChanged: _onSearchChanged,
               leading: const Icon(Icons.search),
             ),
           ),
           if (isLoading)
             const Padding(
               padding: EdgeInsets.only(left: 8.0),
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(),
-              ),
+              child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator()),
             ),
           const SizedBox(height: 12),
-
           Expanded(
             child: filteredUsers.isEmpty && !isLoading
-                ? const Text("Keine Benutzer vorhanden")
+                ? const Center(child: Text("Keine Benutzer vorhanden"))
                 : Scrollbar(
               controller: _scrollController,
               child: SingleChildScrollView(
@@ -251,38 +267,34 @@ class _UserOverviewPageState extends State<UserOverviewScreen> {
                     sortColumnIndex: _sortColumnIndex,
                     sortAscending: _sortAscending,
                     columns: [
-                      DataColumn(
-                        label: const Text("Profilbild"),
-                      ),
+                      const DataColumn(label: Text("Profilbild")),
                       DataColumn(
                         label: const Text("ID"),
                         numeric: true,
-                        onSort: (columnIndex, ascending) => _sort((u) => u.id, columnIndex, ascending),
+                        onSort: (colIndex, asc) => _sort((u) => u.id, colIndex, asc),
                       ),
                       DataColumn(
                         label: const Text("Vorname"),
-                        onSort: (columnIndex, ascending) => _sort((u) => u.firstName.toLowerCase(), columnIndex, ascending),
+                        onSort: (colIndex, asc) => _sort((u) => u.firstName.toLowerCase(), colIndex, asc),
                       ),
                       DataColumn(
                         label: const Text("Nachname"),
-                        onSort: (columnIndex, ascending) => _sort((u) => u.lastName.toLowerCase(), columnIndex, ascending),
+                        onSort: (colIndex, asc) => _sort((u) => u.lastName.toLowerCase(), colIndex, asc),
                       ),
                       DataColumn(
                         label: const Text("Username"),
-                        onSort: (columnIndex, ascending) => _sort((u) => u.username.toLowerCase(), columnIndex, ascending),
+                        onSort: (colIndex, asc) => _sort((u) => u.username.toLowerCase(), colIndex, asc),
                       ),
                       DataColumn(
                         label: const Text("Rolle"),
-                        onSort: (columnIndex, ascending) => _sort((u) => u.role.name, columnIndex, ascending),
+                        onSort: (colIndex, asc) => _sort((u) => u.role.name, colIndex, asc),
                       ),
                       const DataColumn(label: Text("Aktionen")),
                     ],
                     rows: filteredUsers.map((user) {
                       return DataRow(
                         cells: [
-                          DataCell(
-
-                          ),
+                          DataCell(UserProfileImg(user: user)),
                           DataCell(Text(user.id.toString())),
                           DataCell(Text(user.firstName)),
                           DataCell(Text(user.lastName)),
@@ -291,6 +303,7 @@ class _UserOverviewPageState extends State<UserOverviewScreen> {
                           DataCell(
                             Wrap(
                               children: [
+                                IconButton(icon: const Icon(Icons.info_outline), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => MyOverviewScreen(user: user)))),
                                 IconButton(icon: const Icon(Icons.qr_code), onPressed: () => showQrCode(user)),
                                 IconButton(icon: const Icon(Icons.lock_reset), onPressed: () => confirmResetPassword(user)),
                                 IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => confirmDelete(user)),
@@ -303,7 +316,7 @@ class _UserOverviewPageState extends State<UserOverviewScreen> {
                   ),
                 ),
               ),
-            )
+            ),
           ),
           if (_isLoadingMore)
             const Padding(
@@ -316,13 +329,10 @@ class _UserOverviewPageState extends State<UserOverviewScreen> {
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
         onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => CreateUserPage()),
-          );
+          Navigator.push(context, MaterialPageRoute(builder: (context) => CreateUserPage()));
         },
-        label: Text("Benutzer hinzufügen"),
-        icon: Icon(Icons.person_add_alt_1_rounded),
+        label: const Text("Benutzer hinzufügen"),
+        icon: const Icon(Icons.person_add_alt_1_rounded),
       ),
     );
   }

@@ -84,10 +84,17 @@ class UserService {
     }
   }
 
-  Future<List<User>> getUsers({required int page, required int limit, String? search}) async {
-    final uri = Uri.parse(
-      '$baseUrl/users?page=$page&limit=$limit${search != null && search.isNotEmpty ? "&search=$search" : ""}',
-    );
+  Future<List<User>> getUsers({
+    int? page,
+    int? limit,
+    String? search,
+  }) async {
+    final queryParams = <String, String>{};
+    if (page != null) queryParams['page'] = page.toString();
+    if (limit != null) queryParams['limit'] = limit.toString();
+    if (search != null && search.trim().isNotEmpty) queryParams['search'] = search;
+
+    final uri = Uri.parse(baseUrl + '/users').replace(queryParameters: queryParams);
 
     final headers = <String, String>{};
     if (authProvider.jwtToken != null) {
@@ -126,5 +133,47 @@ class UserService {
       throw Exception("Fehler beim Löschen des Benutzers: ${res.statusCode}");
     }
     return true;
+  }
+
+  Future<String?> updateUsername({int? userId, required String newUsername}) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/updateUsername'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ${authProvider.jwtToken}',
+      },
+      body: jsonEncode({
+        if (userId != null) "userId": userId,
+        "username": newUsername,
+      }),
+    );
+
+    if (res.statusCode != 200) {
+      final data = jsonDecode(res.body);
+      return data['error'] ?? 'Unbekannter Fehler';
+    }
+
+    return null;
+  }
+
+  Future<String?> updatePassword({int? userId, required String newPassword}) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/updatePassword'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ${authProvider.jwtToken}',
+      },
+      body: jsonEncode({
+        if (userId != null) "userId": userId,
+        "password": newPassword
+      }),
+    );
+
+    if (res.statusCode != 200) {
+      final data = jsonDecode(res.body);
+      return data['error'] ?? 'Unbekannter Fehler';
+    }
+
+    return null;
   }
 }

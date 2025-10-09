@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:konfipass/designables/konfipass_scaffold.dart';
 import 'package:konfipass/models/event_args.dart';
 import 'package:konfipass/models/event_status.dart';
+import 'package:konfipass/models/user.dart';
+import 'package:konfipass/providers/auth_provider.dart';
+import 'package:provider/provider.dart';
 
 class EventCard extends StatelessWidget {
   final int id;
@@ -31,8 +33,14 @@ class EventCard extends StatelessWidget {
     required this.status,
   });
 
+  String _clipText(String text, [int maxLength = 24]) {
+    if (text.length <= maxLength) return text;
+    return '${text.substring(0, maxLength)}...';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final authProvider = context.read<AuthProvider>();
     final statusColor = {
       EventStatus.attended: Colors.green,
       EventStatus.absent: Colors.red,
@@ -52,21 +60,23 @@ class EventCard extends StatelessWidget {
       elevation: 2,
       child: InkWell(
         onTap: () {
-          Navigator.of(context).pushNamed(
-            '/eventDetail',
-            arguments: EventArgs(
-              id: id,
-              title: title,
-              description: description,
-              weekday: weekday,
-              dayFrom: dayFrom,
-              dayTo: dayTo,
-              month: month,
-              timeFrom: timeFrom,
-              timeTo: timeTo,
-              status: status,
-            ),
-          );
+          if(authProvider.user!.role == UserRole.admin) {
+            Navigator.of(context).pushNamed(
+              '/eventDetail',
+              arguments: EventArgs(
+                id: id,
+                title: title,
+                description: description,
+                weekday: weekday,
+                dayFrom: dayFrom,
+                dayTo: dayTo,
+                month: month,
+                timeFrom: timeFrom,
+                timeTo: timeTo,
+                status: status,
+              ),
+            );
+          }
         },
         child: Row(
           children: [
@@ -116,7 +126,7 @@ class EventCard extends StatelessWidget {
                         children: [
                           // Title
                           Text(
-                            title,
+                            _clipText(title),
                             style: const TextStyle(
                                 fontWeight: FontWeight.w600, fontSize: 16),
                           ),
@@ -124,7 +134,7 @@ class EventCard extends StatelessWidget {
 
                           // Description
                           Text(
-                            description,
+                            _clipText(description),
                             style: TextStyle(
                                 color: Colors.grey.shade600, fontSize: 14),
                           ),

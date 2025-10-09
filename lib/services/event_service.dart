@@ -18,13 +18,18 @@ class EventService {
     return data.map((e) => Event.fromJson(e)).toList();
   }
 
-  Future<List<UserEvent>> getAllEventsWithStatus() async {
+  Future<List<UserEvent>> getAllEventsWithStatus({int? userId}) async {
+    final endpoint = Uri.parse('$baseUrl/eventsFromUser');
+
+    final body = userId != null ? jsonEncode({"userId": userId}) : null;
+
     final res = await http.post(
-      Uri.parse('$baseUrl/eventsFromUser'),
+      endpoint,
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer ${authProvider.jwtToken}'
+        'Authorization': 'Bearer ${authProvider.jwtToken}',
       },
+      body: body,
     );
 
     if (res.statusCode != 200) {
@@ -35,11 +40,9 @@ class EventService {
 
     if (data == null) return [];
 
-    final eventsList = (data as List<dynamic>)
+    return (data as List<dynamic>)
         .map((e) => UserEvent.fromJson(e as Map<String, dynamic>))
         .toList();
-
-    return eventsList;
   }
 
   Future<List<User>> getAttendees(int eventId) async {
@@ -77,6 +80,20 @@ class EventService {
   Future<bool> setAttended(int userId, int eventId) async {
     final res = await http.post(
       Uri.parse('$baseUrl/setAttended'),
+      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ${authProvider.jwtToken}'},
+      body: jsonEncode({"userId": userId, "eventId": eventId}),
+    );
+
+    if (res.statusCode == 200) {
+      return true;
+    } else {
+      throw Exception('Fehler Anwesenheit setzen: ${res.body}');
+    }
+  }
+
+  Future<bool> setAbsent(int userId, int eventId) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/setAbsent'),
       headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ${authProvider.jwtToken}'},
       body: jsonEncode({"userId": userId, "eventId": eventId}),
     );

@@ -5,7 +5,9 @@ import 'package:konfipass/screens/login/login_screen.dart';
 import 'package:provider/provider.dart';
 
 class KonfipassAppbar extends StatelessWidget {
-  const KonfipassAppbar({super.key});
+  final GlobalKey<NavigatorState> innerNavigatorKey;
+
+  const KonfipassAppbar({super.key, required this.innerNavigatorKey});
 
   @override
   Widget build(BuildContext context) {
@@ -24,20 +26,13 @@ class KonfipassAppbar extends StatelessWidget {
             onSelected: (value) {
               switch (value) {
                 case 1:
-                // Profil Einstellungen
-                  showDialog(
-                    context: context,
-                    builder: (_) => AlertDialog(
-                      title: const Text("Profil Einstellungen"),
-                      content: const Text("Hier Profil-Einstellungen später haha."),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text("Schließen"),
-                        ),
-                      ],
-                    ),
-                  );
+                  final user = auth.user;
+                  if (user != null) {
+                    innerNavigatorKey.currentState?.pushNamed(
+                      '/profileSettings',
+                      arguments: user,
+                    );
+                  }
                   break;
                 case 2:
                 // Ausloggen
@@ -56,11 +51,14 @@ class KonfipassAppbar extends StatelessWidget {
                             auth.logout();
                             Navigator.pushAndRemoveUntil(
                               context,
-                              MaterialPageRoute(builder: (context) => LoginScreen()),
-                                  (Route<dynamic> route) => false,
+                              MaterialPageRoute(builder: (_) => LoginScreen()),
+                                  (route) => false,
                             );
                           },
-                          child: const Text("Ausloggen", style: TextStyle(color: Colors.red)),
+                          child: const Text(
+                            "Ausloggen",
+                            style: TextStyle(color: Colors.red),
+                          ),
                         ),
                       ],
                     ),
@@ -68,7 +66,7 @@ class KonfipassAppbar extends StatelessWidget {
                   break;
               }
             },
-            itemBuilder: (context) => const [
+            itemBuilder: (_) => const [
               PopupMenuItem(
                 value: 1,
                 child: Text("Profil Einstellungen"),

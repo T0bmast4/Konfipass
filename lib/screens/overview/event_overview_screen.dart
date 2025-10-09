@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:konfipass/designables/event_card.dart';
 import 'package:konfipass/models/event_status.dart';
+import 'package:konfipass/models/user.dart';
 import 'package:konfipass/models/user_event.dart';
 import 'package:konfipass/providers/auth_provider.dart';
 import 'package:konfipass/screens/create/create_event_screen.dart';
@@ -16,15 +17,16 @@ class AppointmentScreen extends StatefulWidget {
 
 class _AppointmentScreenState extends State<AppointmentScreen> {
   late EventService eventService;
+  late AuthProvider authProvider;
 
   final List<String> categories = [
+    "Anstehend",
     "Alle",
     "Anwesend",
     "Abwesend",
-    "Anstehend",
   ];
 
-  String selectedCategory = "Alle";
+  String selectedCategory = "Anstehend";
 
   final List<UserEvent> allEvents = [];
 
@@ -53,6 +55,7 @@ class _AppointmentScreenState extends State<AppointmentScreen> {
   void initState() {
     super.initState();
     eventService = context.read<EventService>();
+    authProvider = context.read<AuthProvider>();
     loadEvents();
   }
 
@@ -130,7 +133,7 @@ class _AppointmentScreenState extends State<AppointmentScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: authProvider.user?.role == UserRole.admin ? FloatingActionButton.extended(
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
         onPressed: () {
@@ -138,7 +141,7 @@ class _AppointmentScreenState extends State<AppointmentScreen> {
         },
         label: const Text("Neuer Termin"),
         icon: const Icon(Icons.add),
-      ),
+      ) : null,
     );
   }
 }
