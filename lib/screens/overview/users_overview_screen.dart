@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:konfipass/designables/reset_password_dialog.dart';
 import 'package:konfipass/designables/user_profile_img.dart';
+import 'package:konfipass/designables/user_qr_dialog.dart';
 import 'package:konfipass/models/konfipass_pdf.dart';
 import 'package:konfipass/models/user.dart';
 import 'package:konfipass/screens/create/create_user_screen.dart';
@@ -131,33 +132,10 @@ class _UserOverviewPageState extends State<UserOverviewScreen> {
   }
 
   void showQrCode(User user) {
-    KonfipassPdf konfipassPdf = new KonfipassPdf(firstName: user.firstName, lastName: user.lastName, username: user.username, password: "!! nicht verfügbar !!", uuid: user.uuid);
     Future.delayed(Duration.zero, () {
       showDialog(
         context: context,
-        builder: (ctx) => AlertDialog(
-          title: Text("QR Code für ${user.username}"),
-          content: SizedBox(
-            width: 200,
-            height: 200,
-            child: Center(
-              child: QrImageView(data: user.uuid, version: QrVersions.auto),
-            ),
-          ),
-          actions: [
-            ElevatedButton.icon(
-              onPressed: () => konfipassPdf.downloadPdfWeb(
-                Navigator.of(context, rootNavigator: true).context,
-              ),
-              icon: const Icon(Icons.picture_as_pdf),
-              label: const Text('Als PDF herunterladen'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text("Schließen"),
-            ),
-          ],
-        ),
+        builder: (ctx) => UserQrDialog(user: user, pdfDownload: true),
       );
     });
   }

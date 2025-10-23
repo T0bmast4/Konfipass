@@ -63,11 +63,12 @@ class _QrScannerDialogContentState extends State<QrScannerDialogContent> {
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
 
-      if (js.context.hasProperty('BarcodeDetector')) {
-        detectWithBarcodeDetector();
-      } else {
+      // Nicht überall supported
+      //if (js.context.hasProperty('BarcodeDetector')) {
+        //detectWithBarcodeDetector();
+      //} else {
         detectWithJsQR();
-      }
+      //}
     } catch (e) {
       print('Fehler beim Zugriff auf die Kamera: $e');
     }

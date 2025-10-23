@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:konfipass/designables/qr_scanner_dialog.dart';
 import 'package:konfipass/designables/user_profile_img.dart';
+import 'package:konfipass/models/event.dart';
 import 'package:konfipass/models/event_status.dart';
 import 'package:konfipass/models/user.dart';
+import 'package:konfipass/screens/create/create_event_screen.dart';
 import 'package:konfipass/services/event_service.dart';
 import 'package:konfipass/services/user_service.dart';
 import 'package:provider/provider.dart';
@@ -18,6 +20,7 @@ class EventDetailScreen extends StatefulWidget {
   final String timeFrom;
   final String timeTo;
   final EventStatus status;
+  final int year;
 
   const EventDetailScreen({
     super.key,
@@ -31,6 +34,7 @@ class EventDetailScreen extends StatefulWidget {
     required this.timeFrom,
     required this.timeTo,
     required this.status,
+    required this.year,
   });
 
   @override
@@ -156,6 +160,23 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     }
   }
 
+  int _monthNumber(String monthAbbr) {
+    const months = {
+      'Jan': 1,
+      'Feb': 2,
+      'Mär': 3,
+      'Apr': 4,
+      'Mai': 5,
+      'Jun': 6,
+      'Jul': 7,
+      'Aug': 8,
+      'Sep': 9,
+      'Okt': 10,
+      'Nov': 11,
+      'Dez': 12,
+    };
+    return months[monthAbbr] ?? 1;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -163,21 +184,73 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          onPressed: () => Navigator.pop(context),
         ),
         title: const Text('Termin Details'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit),
+            tooltip: 'Bearbeiten',
+            onPressed: () {
+              final startDate = DateTime(
+                widget.year,
+                _monthNumber(widget.month),
+                int.parse(widget.dayFrom),
+                int.parse(widget.timeFrom.split(':')[0]),
+                int.parse(widget.timeFrom.split(':')[1]),
+              );
+
+              final endDate = DateTime(
+                widget.year,
+                _monthNumber(widget.month),
+                int.parse(widget.dayTo),
+                int.parse(widget.timeTo.split(':')[0]),
+                int.parse(widget.timeTo.split(':')[1]),
+              );
+
+              final startTime = TimeOfDay(
+                hour: int.parse(widget.timeFrom.split(':')[0]),
+                minute: int.parse(widget.timeFrom.split(':')[1]),
+              );
+
+              final endTime = TimeOfDay(
+                hour: int.parse(widget.timeTo.split(':')[0]),
+                minute: int.parse(widget.timeTo.split(':')[1]),
+              );
+
+              final event = Event(
+                id: widget.id,
+                title: widget.title,
+                description: widget.description,
+                startDate: startDate,
+                endDate: endDate,
+                startTime: startTime,
+                endTime: endTime,
+              );
+
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CreateEventScreen(event: event),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Titel + Beschreibung
             Text(
               widget.title,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              widget.description,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),

@@ -10,6 +10,7 @@ class EventArgs {
   final String month;
   final String timeFrom;
   final String timeTo;
+  final int year;
   final EventStatus status;
 
   EventArgs({
@@ -22,6 +23,7 @@ class EventArgs {
     required this.month,
     required this.timeFrom,
     required this.timeTo,
+    required this.year,
     required this.status,
   });
 }

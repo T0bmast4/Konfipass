@@ -158,6 +158,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       timeFrom: args.timeFrom,
                       timeTo: args.timeTo,
                       weekday: args.weekday,
+                      year: args.year,
                       status: args.status,
                     ),
                   );

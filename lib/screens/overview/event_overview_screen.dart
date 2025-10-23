@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:konfipass/designables/event_card.dart';
+import 'package:konfipass/designables/user_qr_dialog.dart';
 import 'package:konfipass/models/event_status.dart';
 import 'package:konfipass/models/user.dart';
 import 'package:konfipass/models/user_event.dart';
@@ -123,6 +124,7 @@ class _AppointmentScreenState extends State<AppointmentScreen> {
                           description: event.description,
                           daysRemaining: daysRemaining,
                           status: event.status,
+                          year: event.startDate.year,
                         ),
                       );
                     }).toList(),
@@ -141,7 +143,20 @@ class _AppointmentScreenState extends State<AppointmentScreen> {
         },
         label: const Text("Neuer Termin"),
         icon: const Icon(Icons.add),
-      ) : null,
+      )
+      // USER Floating Action Button
+      : FloatingActionButton.extended(
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        onPressed: () {
+          showDialog(
+            context: context,
+            builder: (ctx) => UserQrDialog(user: authProvider.user!, pdfDownload: false),
+          );
+        },
+        label: const Text("Mein QR-Code"),
+        icon: const Icon(Icons.qr_code_2),
+      ),
     );
   }
 }

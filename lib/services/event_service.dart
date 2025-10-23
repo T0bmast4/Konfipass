@@ -12,6 +12,8 @@ class EventService {
 
   EventService({required this.baseUrl, required this.authProvider});
 
+
+  // API Endpunkt gibt es garnicht
   Future<List<Event>> getAllEvents() async {
     final res = await http.get(Uri.parse('$baseUrl/events'));
     final data = jsonDecode(res.body) as List;
@@ -130,4 +132,31 @@ class EventService {
     return DateTime(date.year, date.month, date.day, time.hour, time.minute);
   }
 
+  Future<bool> updateEvent(int id, String title, String description,
+      DateTime startDate, DateTime endDate, TimeOfDay startTime, TimeOfDay endTime) async {
+
+    final startDateTime = _combineDateAndTime(startDate, startTime);
+    final endDateTime = _combineDateAndTime(endDate, endTime);
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/update'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ${authProvider.jwtToken}',
+      },
+      body: jsonEncode({
+        'id': id,
+        'title': title,
+        'description': description,
+        'start_datetime': startDateTime.toIso8601String(),
+        'end_datetime': endDateTime.toIso8601String(),
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      throw Exception('Event konnte nicht aktualisiert werden: ${response.statusCode}: ${response.body}');
+    }
+  }
 }

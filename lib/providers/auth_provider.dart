@@ -64,7 +64,7 @@ class AuthProvider extends ChangeNotifier {
 
     } catch (e) {
       print("Login failed: $e");
-      return "Server nicht erreichbar. Bitte Verbindung prüfen.";
+      return "Server nicht erreichbar. Bitte Verbindung prüfen. Fehler: $e";
     }
   }
 

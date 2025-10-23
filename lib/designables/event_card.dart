@@ -16,6 +16,7 @@ class EventCard extends StatelessWidget {
   final String title;
   final String description;
   final int daysRemaining;
+  final int year;
   final EventStatus status;
 
   const EventCard({
@@ -30,13 +31,10 @@ class EventCard extends StatelessWidget {
     required this.title,
     required this.description,
     required this.daysRemaining,
+    required this.year,
     required this.status,
   });
 
-  String _clipText(String text, [int maxLength = 24]) {
-    if (text.length <= maxLength) return text;
-    return '${text.substring(0, maxLength)}...';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -73,6 +71,7 @@ class EventCard extends StatelessWidget {
                 month: month,
                 timeFrom: timeFrom,
                 timeTo: timeTo,
+                year: year,
                 status: status,
               ),
             );
@@ -126,17 +125,21 @@ class EventCard extends StatelessWidget {
                         children: [
                           // Title
                           Text(
-                            _clipText(title),
+                            title,
                             style: const TextStyle(
-                                fontWeight: FontWeight.w600, fontSize: 16),
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                           ),
                           const SizedBox(height: 4),
 
                           // Description
                           Text(
-                            _clipText(description),
-                            style: TextStyle(
-                                color: Colors.grey.shade600, fontSize: 14),
+                            description,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1
                           ),
                           const SizedBox(height: 8),
 
